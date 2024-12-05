@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+set -o errexit;
+set -o nounset;
+set -o xtrace;
+
+readonly DEFAULT_COMMAND="";
+readonly COMMAND="${1:-${DEFAULT_COMMAND}}";
+
+readonly DISK_ID="virtio-SECURE-STORAGE-DISK";
+readonly MAPPER_ID="${DISK_ID}";
+readonly DISK_PATH="/dev/disk/by-id/${DISK_ID}";
+readonly MAPPER_PATH="/dev/mapper/${MAPPER_ID}";
+readonly MOUNT_PATH="/mnt/secure-storage";
+readonly HOME_PATH="${HOME}";
+
+case "${COMMAND}" in
+
+  "init")
+    sudo cryptsetup luksFormat "${DISK_PATH}";
+    sudo cryptsetup open "${DISK_PATH}" "${MAPPER_ID}";
+    sudo mkfs.ext4 "${MAPPER_PATH}";
+    sudo cryptsetup close "${MAPPER_ID}";
+    ;;
+
+  "open")
+    sudo mkdir --parents "${MOUNT_PATH}";
+    sudo cryptsetup open "${DISK_PATH}" "${MAPPER_ID}";
+    sudo mount "${MAPPER_PATH}" "${MOUNT_PATH}";
+    sudo chown "$(id --user):$(id --group)" "${MOUNT_PATH}";
+    ;;
+
+  "lock")
+    sudo umount "${MOUNT_PATH}";
+    sudo cryptsetup close "${MAPPER_ID}";
+    sudo rm -rf "${MOUNT_PATH}";
+    ;;
+
+  *)
+    echo "Unknow command. Available commands: init, open, lock";
+    ;;
+
+esac

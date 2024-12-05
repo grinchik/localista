@@ -16,6 +16,16 @@ storage:
       with_mount_unit: true
       mount_options:
         - noatime
+  files:
+    - path: /var/home/core/bin/ss
+      overwrite: true
+      contents:
+        local: files-dir/bin/ss
+      mode: 0o700
+      user:
+        name: core
+      group:
+        name: core
 passwd:
   users:
     - name: core

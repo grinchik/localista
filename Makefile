@@ -11,9 +11,14 @@ VAR_IMAGE_FILE_NAME:=var.qcow2
 VAR_IMAGE_FORMAT:=qcow2
 VAR_IMAGE_SIZE:=16G
 
+SECURE_STORAGE_IMAGE_FILE_NAME:=secure-storage.qcow2
+SECURE_STORAGE_IMAGE_FORMAT:=qcow2
+SECURE_STORAGE_IMAGE_SIZE:=16G
+
 EFI_IMAGE_FILE_PATH:=/opt/homebrew/share/qemu/edk2-aarch64-code.fd
 
 SSH_AUTHORIZED_KEY_FILE_NAME:=id_ed25519.pub
+SS_FILE_PATH:=files-dir/bin/ss
 
 .PHONY: _
 _:
@@ -36,6 +41,7 @@ $(SSH_AUTHORIZED_KEY_FILE_NAME): \
 $(IGNITION_CONFIG_FILE_NAME): \
 	$(BUTANE_CONFIG_FILE_NAME) \
 	$(SSH_AUTHORIZED_KEY_FILE_NAME) \
+	$(SS_FILE_PATH) \
 	/
 	butane \
 		--files-dir . \
@@ -64,10 +70,20 @@ $(VAR_IMAGE_FILE_NAME): \
 			$(VAR_IMAGE_SIZE) \
 		;
 
+$(SECURE_STORAGE_IMAGE_FILE_NAME): \
+	/
+	qemu-img \
+		create \
+			-f $(SECURE_STORAGE_IMAGE_FORMAT) \
+			$(SECURE_STORAGE_IMAGE_FILE_NAME) \
+			$(SECURE_STORAGE_IMAGE_SIZE) \
+		;
+
 .PHONY: localista
 localista: \
 	$(BOOT_IMAGE_FILE_NAME) \
 	$(VAR_IMAGE_FILE_NAME) \
+	$(SECURE_STORAGE_IMAGE_FILE_NAME) \
 	$(IGNITION_CONFIG_FILE_NAME) \
 	/
 	qemu-system-aarch64 \
@@ -85,6 +101,9 @@ localista: \
 		\
 		-drive file=$(VAR_IMAGE_FILE_NAME),if=none,id=VAR-DISK \
 		-device virtio-blk-pci,drive=VAR-DISK,serial=VAR-DISK \
+		\
+		-drive file=$(SECURE_STORAGE_IMAGE_FILE_NAME),if=none,id=SECURE-STORAGE-DISK \
+		-device virtio-blk-pci,drive=SECURE-STORAGE-DISK,serial=SECURE-STORAGE-DISK \
 		\
 		-nic user,model=virtio\
 ,hostfwd=tcp:127.0.0.1:2222-:22\
