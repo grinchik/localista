@@ -87,7 +87,7 @@ localista: \
 		-device virtio-blk-pci,drive=VAR-DISK,serial=VAR-DISK \
 		\
 		-nic user,model=virtio\
-,hostfwd=tcp::2222-:22\
+,hostfwd=tcp:127.0.0.1:2222-:22\
 		\
 		-nographic \
 		;
