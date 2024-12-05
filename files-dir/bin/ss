@@ -14,6 +14,13 @@ readonly MAPPER_PATH="/dev/mapper/${MAPPER_ID}";
 readonly MOUNT_PATH="/mnt/secure-storage";
 readonly HOME_PATH="${HOME}";
 
+readonly MAP_FILE_LIST=(
+    ".ssh/known_hosts"
+    ".ssh/config"
+    ".ssh/id_ed25519"
+    ".ssh/id_ed25519.pub"
+);
+
 case "${COMMAND}" in
 
   "init")
@@ -28,12 +35,28 @@ case "${COMMAND}" in
     sudo cryptsetup open "${DISK_PATH}" "${MAPPER_ID}";
     sudo mount "${MAPPER_PATH}" "${MOUNT_PATH}";
     sudo chown "$(id --user):$(id --group)" "${MOUNT_PATH}";
+
+    for FILE in "${MAP_FILE_LIST[@]}"; do
+        ln \
+            --force \
+            --symbolic \
+            "${MOUNT_PATH}/${FILE}" \
+            "${HOME_PATH}/${FILE}" \
+            ;
+    done
     ;;
 
   "lock")
     sudo umount "${MOUNT_PATH}";
     sudo cryptsetup close "${MAPPER_ID}";
     sudo rm -rf "${MOUNT_PATH}";
+
+    for FILE in "${MAP_FILE_LIST[@]}"; do
+        rm \
+            --force \
+            "${HOME_PATH}/${FILE}" \
+            ;
+    done
     ;;
 
   *)
